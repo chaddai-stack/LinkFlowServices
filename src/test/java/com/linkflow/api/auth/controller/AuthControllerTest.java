@@ -18,10 +18,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -195,6 +198,30 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value(nullValue()))
+                .andExpect(jsonPath("$.error").value(nullValue()));
+    }
+
+    @Test
+    void meReturnsAuthenticatedUserEnvelope() throws Exception {
+        AuthService authService = Mockito.mock(AuthService.class);
+        MockMvc mockMvc = createMockMvc(authService);
+        UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        Mockito.when(authService.getCurrentUser(eq(userId))).thenReturn(new AuthUserResponse(
+                userId,
+                "alice@example.com",
+                "alice",
+                "user",
+                "active",
+                OffsetDateTime.parse("2026-03-07T10:00:00Z")
+        ));
+
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .principal((Principal) userId::toString))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("X-Request-Id"))
+                .andExpect(jsonPath("$.data.id").value(userId.toString()))
+                .andExpect(jsonPath("$.data.email").value("alice@example.com"))
                 .andExpect(jsonPath("$.error").value(nullValue()));
     }
 }
