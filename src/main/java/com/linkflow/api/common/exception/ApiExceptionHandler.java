@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.linkflow.api.common.error.ApiException;
 import com.linkflow.api.common.response.ApiError;
 import com.linkflow.api.common.response.ApiResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -44,6 +46,7 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.failure(error));
     }
 
+<<<<<<< HEAD
     private String resolveFieldName(FieldError error, Object target) {
         Class<?> targetType = target == null ? null : target.getClass();
         if (targetType == null) {
@@ -72,6 +75,20 @@ public class ApiExceptionHandler {
         }
 
         return error.getField();
+=======
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            String path = violation.getPropertyPath().toString();
+            int separator = path.lastIndexOf('.');
+            String field = separator >= 0 ? path.substring(separator + 1) : path;
+            details.put(field, violation.getMessage());
+        }
+
+        ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed.", details);
+        return ResponseEntity.badRequest().body(ApiResponse.failure(error));
+>>>>>>> 74b577c (feat: add query apis for links and dashboard)
     }
 
     @ExceptionHandler(IllegalStateException.class)
