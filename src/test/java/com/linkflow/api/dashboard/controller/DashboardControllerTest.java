@@ -47,4 +47,17 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.data.total_links").value(12))
                 .andExpect(jsonPath("$.error").value(nullValue()));
     }
+
+    @Test
+    void summaryRejectsPartialRange() throws Exception {
+        DashboardService service = Mockito.mock(DashboardService.class);
+        MockMvc mockMvc = createMockMvc(service);
+
+        mockMvc.perform(get("/api/v1/dashboard/summary")
+                        .param("from", "2026-03-01T00:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.error.details.from").value("from and to must be provided together."))
+                .andExpect(jsonPath("$.error.details.to").value("from and to must be provided together."));
+    }
 }

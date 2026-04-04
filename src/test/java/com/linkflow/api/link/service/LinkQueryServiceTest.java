@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +34,7 @@ class LinkQueryServiceTest {
 
         LinkSummaryResponse item = service.list(1, 20).getContent().get(0);
 
-        assertEquals(7L, item.id());
+        assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000007"), item.id());
         assertEquals("promo2026", item.slug());
         assertEquals("/r/promo2026", item.shortUrl());
     }
@@ -42,10 +43,11 @@ class LinkQueryServiceTest {
     void getByIdThrowsLinkNotFoundWhenMissing() {
         UrlMappingRepository repository = Mockito.mock(UrlMappingRepository.class);
         LinkQueryService service = new LinkQueryService(repository);
+        UUID linkId = UUID.fromString("00000000-0000-0000-0000-000000000063");
 
         Mockito.when(repository.findById(99L)).thenReturn(Optional.empty());
 
-        ApiException exception = assertThrows(ApiException.class, () -> service.getById(99L));
+        ApiException exception = assertThrows(ApiException.class, () -> service.getById(linkId));
 
         assertEquals("LINK_NOT_FOUND", exception.getCode());
     }

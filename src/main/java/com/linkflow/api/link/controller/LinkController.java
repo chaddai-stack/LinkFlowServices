@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Validated
 @RestController
@@ -47,7 +48,7 @@ public class LinkController {
     }
 
     @GetMapping("/{link_id}")
-    public ResponseEntity<ApiResponse<LinkSummaryResponse>> detail(@PathVariable("link_id") Long linkId) {
+    public ResponseEntity<ApiResponse<LinkSummaryResponse>> detail(@PathVariable("link_id") UUID linkId) {
         return ResponseEntity.ok(ApiResponse.success(linkQueryService.getById(linkId)));
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class LinkQueryService {
@@ -27,8 +28,9 @@ public class LinkQueryService {
     }
 
     @Transactional(readOnly = true)
-    public LinkSummaryResponse getById(Long linkId) {
-        return urlMappingRepository.findById(linkId)
+    public LinkSummaryResponse getById(UUID linkId) {
+        Long internalId = toInternalId(linkId);
+        return urlMappingRepository.findById(internalId)
                 .map(LinkSummaryResponse::from)
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.NOT_FOUND,
@@ -36,5 +38,17 @@ public class LinkQueryService {
                         "Short link does not exist or is inactive.",
                         Map.of("link_id", linkId)
                 ));
+    }
+
+    private Long toInternalId(UUID publicId) {
+        if (publicId.getMostSignificantBits() != 0L || publicId.getLeastSignificantBits() <= 0L) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "LINK_NOT_FOUND",
+                    "Short link does not exist or is inactive.",
+                    Map.of("link_id", publicId)
+            );
+        }
+        return publicId.getLeastSignificantBits();
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,7 +48,7 @@ class LinkControllerTest {
 
         Mockito.when(service.list(1, 20)).thenReturn(new PageImpl<>(
                 List.of(new LinkSummaryResponse(
-                        7L,
+                        UUID.fromString("00000000-0000-0000-0000-000000000007"),
                         "promo2026",
                         "/r/promo2026",
                         "https://example.com/campaign",
@@ -75,9 +76,10 @@ class LinkControllerTest {
     void detailReturnsEnvelope() throws Exception {
         LinkQueryService service = Mockito.mock(LinkQueryService.class);
         MockMvc mockMvc = createMockMvc(service);
+        UUID linkId = UUID.fromString("00000000-0000-0000-0000-000000000007");
 
-        Mockito.when(service.getById(7L)).thenReturn(new LinkSummaryResponse(
-                7L,
+        Mockito.when(service.getById(linkId)).thenReturn(new LinkSummaryResponse(
+                linkId,
                 "promo2026",
                 "/r/promo2026",
                 "https://example.com/campaign",
@@ -90,9 +92,9 @@ class LinkControllerTest {
                 null
         ));
 
-        mockMvc.perform(get("/api/v1/links/7"))
+        mockMvc.perform(get("/api/v1/links/{linkId}", linkId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(7))
+                .andExpect(jsonPath("$.data.id").value(linkId.toString()))
                 .andExpect(jsonPath("$.data.short_url").value("/r/promo2026"));
     }
 

@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.linkflow.api.link.domain.UrlMapping;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public record LinkSummaryResponse(
-        Long id,
+        UUID id,
         String slug,
         @JsonProperty("short_url")
         String shortUrl,
@@ -26,7 +27,7 @@ public record LinkSummaryResponse(
 ) {
     public static LinkSummaryResponse from(UrlMapping mapping) {
         return new LinkSummaryResponse(
-                mapping.getId(),
+                toPublicId(mapping.getId()),
                 mapping.getSlug(),
                 "/r/" + mapping.getSlug(),
                 mapping.getLongUrl(),
@@ -38,5 +39,9 @@ public record LinkSummaryResponse(
                 mapping.getCreatedAt(),
                 null
         );
+    }
+
+    public static UUID toPublicId(Long internalId) {
+        return new UUID(0L, internalId);
     }
 }
