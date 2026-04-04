@@ -115,7 +115,7 @@ class UrlControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.error.details.longUrl").exists())
+                .andExpect(jsonPath("$.error.details.long_url").exists())
                 .andExpect(jsonPath("$.error.details.title").exists());
 
         verify(urlCodecService, never()).createOrGet(anyString());
