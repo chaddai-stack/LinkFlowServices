@@ -1,5 +1,6 @@
 package com.linkflow.api.common.exception;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.linkflow.api.common.error.ApiException;
 import com.linkflow.api.common.response.ApiError;
 import com.linkflow.api.common.response.ApiResponse;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.RecordComponent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -32,12 +35,43 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, Object> details = new LinkedHashMap<>();
+        Object target = ex.getBindingResult().getTarget();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            details.put(error.getField(), error.getDefaultMessage());
+            details.put(resolveFieldName(error, target), error.getDefaultMessage());
         }
 
         ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed.", details);
         return ResponseEntity.badRequest().body(ApiResponse.failure(error));
+    }
+
+    private String resolveFieldName(FieldError error, Object target) {
+        Class<?> targetType = target == null ? null : target.getClass();
+        if (targetType == null) {
+            return error.getField();
+        }
+
+        if (targetType.isRecord()) {
+            for (RecordComponent component : targetType.getRecordComponents()) {
+                if (!component.getName().equals(error.getField())) {
+                    continue;
+                }
+                JsonProperty property = component.getAnnotation(JsonProperty.class);
+                if (property != null && !property.value().isBlank()) {
+                    return property.value();
+                }
+            }
+        }
+
+        try {
+            Field field = targetType.getDeclaredField(error.getField());
+            JsonProperty property = field.getAnnotation(JsonProperty.class);
+            if (property != null && !property.value().isBlank()) {
+                return property.value();
+            }
+        } catch (NoSuchFieldException ignored) {
+        }
+
+        return error.getField();
     }
 
     @ExceptionHandler(IllegalStateException.class)

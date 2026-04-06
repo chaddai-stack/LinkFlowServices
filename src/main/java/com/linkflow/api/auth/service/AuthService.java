@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -97,6 +98,18 @@ public class AuthService {
     @Transactional
     public void logout(RefreshTokenRequest request) {
         refreshTokenService.revoke(request.refreshToken());
+    }
+
+    @Transactional(readOnly = true)
+    public AuthUserResponse getCurrentUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "User does not exist.",
+                        Map.of("user_id", userId)
+                ));
+        return AuthUserResponse.from(user);
     }
 
     private LoginResponse issueSession(User user) {
