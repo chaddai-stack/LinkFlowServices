@@ -4,6 +4,7 @@ import com.linkflow.api.common.error.ApiException;
 import com.linkflow.api.common.response.ApiResponse;
 import com.linkflow.api.dashboard.dto.DashboardSummaryResponse;
 import com.linkflow.api.dashboard.service.DashboardService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/v1/dashboard")
+@SecurityRequirement(name = "bearerAuth")
 public class DashboardController {
 
     private final DashboardService dashboardService;

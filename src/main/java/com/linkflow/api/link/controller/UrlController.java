@@ -1,12 +1,10 @@
 package com.linkflow.api.link.controller;
 
-import com.linkflow.api.common.response.ApiResponse;
-import com.linkflow.api.link.dto.CreateLinkRequest;
-import com.linkflow.api.link.dto.CreateLinkResponse;
 import com.linkflow.api.link.dto.CreateShortUrlRequest;
 import com.linkflow.api.link.dto.CreateShortUrlResponse;
 import com.linkflow.api.link.service.UrlCodecService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +15,14 @@ import java.net.URI;
 public class UrlController {
 
     private final UrlCodecService urlCodecService;
+    private final String publicBaseUrl;
 
-    public UrlController(UrlCodecService urlCodecService) {
+    public UrlController(
+            UrlCodecService urlCodecService,
+            @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl
+    ) {
         this.urlCodecService = urlCodecService;
+        this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
     }
 
     @PostMapping("/api/short-urls")
@@ -27,7 +30,7 @@ public class UrlController {
         var mapping = urlCodecService.createOrGet(request.longUrl());
         return new CreateShortUrlResponse(
                 mapping.getSlug(),
-                "/api/short-urls/" + mapping.getSlug(),
+                absoluteUrl("/api/short-urls/" + mapping.getSlug()),
                 mapping.getLongUrl()
         );
     }
@@ -40,23 +43,15 @@ public class UrlController {
                 .build();
     }
 
-    @PostMapping("/api/v1/links")
-    public ResponseEntity<ApiResponse<CreateLinkResponse>> createLink(@Valid @RequestBody CreateLinkRequest request) {
-        var mapping = urlCodecService.createOrGet(request.longUrl());
-        CreateLinkResponse response = new CreateLinkResponse(
-                mapping.getSlug(),
-                "/r/" + mapping.getSlug(),
-                mapping.getLongUrl(),
-                mapping.getCreatedAt()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
-    }
-
     @GetMapping("/r/{slug}")
     public ResponseEntity<Void> redirect(@PathVariable String slug) {
         var mapping = urlCodecService.resolve(slug);
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(mapping.getLongUrl()))
                 .build();
+    }
+
+    private String absoluteUrl(String path) {
+        return publicBaseUrl + path;
     }
 }

@@ -3,6 +3,7 @@ package com.linkflow.api.analytics.controller;
 import com.linkflow.api.analytics.service.RealtimeAnalyticsService;
 import com.linkflow.api.common.response.ApiResponse;
 import com.linkflow.api.link.dto.LinkSummaryResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -19,6 +20,7 @@ import java.util.Map;
 @Validated
 @RestController
 @RequestMapping("/api/v1/analytics/realtime")
+@SecurityRequirement(name = "bearerAuth")
 public class RealtimeAnalyticsController {
 
     private final RealtimeAnalyticsService realtimeAnalyticsService;

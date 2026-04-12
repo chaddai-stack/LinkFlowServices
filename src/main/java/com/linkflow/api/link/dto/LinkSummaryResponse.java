@@ -1,6 +1,7 @@
 package com.linkflow.api.link.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.linkflow.api.link.domain.LinkStatus;
 import com.linkflow.api.link.domain.UrlMapping;
 
 import java.time.OffsetDateTime;
@@ -31,13 +32,13 @@ public record LinkSummaryResponse(
                 mapping.getSlug(),
                 "/r/" + mapping.getSlug(),
                 mapping.getLongUrl(),
-                null,
-                null,
-                "active",
+                mapping.getTitle(),
+                mapping.getChannel(),
+                mapping.getStatus() == null ? LinkStatus.ACTIVE.wireValue() : mapping.getStatus().wireValue(),
                 0,
                 0,
                 mapping.getCreatedAt(),
-                null
+                mapping.getExpiresAt()
         );
     }
 

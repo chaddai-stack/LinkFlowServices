@@ -44,7 +44,7 @@ class RealtimeAnalyticsControllerTest {
         MockMvc mockMvc = createMockMvc(service);
 
         Mockito.when(service.getHotLinks("15m", 10)).thenReturn(List.of(new LinkSummaryResponse(
-                3L,
+                LinkSummaryResponse.toPublicId(3L),
                 "abc1234",
                 "/r/abc1234",
                 "https://example.com/landing",

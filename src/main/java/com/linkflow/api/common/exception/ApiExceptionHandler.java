@@ -9,6 +9,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -46,7 +47,6 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.failure(error));
     }
 
-<<<<<<< HEAD
     private String resolveFieldName(FieldError error, Object target) {
         Class<?> targetType = target == null ? null : target.getClass();
         if (targetType == null) {
@@ -75,7 +75,8 @@ public class ApiExceptionHandler {
         }
 
         return error.getField();
-=======
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
         Map<String, Object> details = new LinkedHashMap<>();
@@ -88,7 +89,22 @@ public class ApiExceptionHandler {
 
         ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed.", details);
         return ResponseEntity.badRequest().body(ApiResponse.failure(error));
->>>>>>> 74b577c (feat: add query apis for links and dashboard)
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        ex.getParameterValidationResults().forEach(result -> {
+            String field = result.getMethodParameter().getParameterName();
+            result.getResolvableErrors().forEach(error -> {
+                if (field != null && !field.isBlank() && !details.containsKey(field)) {
+                    details.put(field, error.getDefaultMessage());
+                }
+            });
+        });
+
+        ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed.", details);
+        return ResponseEntity.badRequest().body(ApiResponse.failure(error));
     }
 
     @ExceptionHandler(IllegalStateException.class)
