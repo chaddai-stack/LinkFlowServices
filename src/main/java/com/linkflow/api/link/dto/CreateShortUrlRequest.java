@@ -1,12 +1,14 @@
 package com.linkflow.api.link.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;
 
 public record CreateShortUrlRequest(
         @NotBlank(message = "longUrl must not be blank")
         @Size(max = 2048, message = "longUrl length must be <= 2048")
+        @Pattern(regexp = "(?i)^https?://.+$", message = "longUrl must start with http:// or https://")
         @URL(message = "longUrl must be a valid URL")
         String longUrl
 ) {

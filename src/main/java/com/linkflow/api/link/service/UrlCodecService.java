@@ -25,7 +25,7 @@ public class UrlCodecService {
 
     @Transactional
     public UrlMapping createOrGet(String longUrl) {
-        return repository.findByLongUrl(longUrl)
+        return repository.findFirstByLongUrlOrderByIdAsc(longUrl)
                 .orElseGet(() -> createWithRetry(longUrl));
     }
 
@@ -41,7 +41,7 @@ public class UrlCodecService {
             try {
                 return repository.save(new UrlMapping(longUrl, slug));
             } catch (DataIntegrityViolationException ex) {
-                var existing = repository.findByLongUrl(longUrl);
+                var existing = repository.findFirstByLongUrlOrderByIdAsc(longUrl);
                 if (existing.isPresent()) {
                     return existing.get();
                 }

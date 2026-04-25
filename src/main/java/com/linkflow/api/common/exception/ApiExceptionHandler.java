@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.linkflow.api.common.error.ApiException;
 import com.linkflow.api.common.response.ApiError;
 import com.linkflow.api.common.response.ApiResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -72,6 +75,36 @@ public class ApiExceptionHandler {
         }
 
         return error.getField();
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            String path = violation.getPropertyPath().toString();
+            int separator = path.lastIndexOf('.');
+            String field = separator >= 0 ? path.substring(separator + 1) : path;
+            details.put(field, violation.getMessage());
+        }
+
+        ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed.", details);
+        return ResponseEntity.badRequest().body(ApiResponse.failure(error));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        ex.getParameterValidationResults().forEach(result -> {
+            String field = result.getMethodParameter().getParameterName();
+            result.getResolvableErrors().forEach(error -> {
+                if (field != null && !field.isBlank() && !details.containsKey(field)) {
+                    details.put(field, error.getDefaultMessage());
+                }
+            });
+        });
+
+        ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed.", details);
+        return ResponseEntity.badRequest().body(ApiResponse.failure(error));
     }
 
     @ExceptionHandler(IllegalStateException.class)

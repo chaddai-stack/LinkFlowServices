@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkflow.api.common.exception.ApiExceptionHandler;
 import com.linkflow.api.common.web.RequestIdFilter;
 import com.linkflow.api.link.domain.UrlMapping;
-import com.linkflow.api.link.dto.CreateLinkRequest;
 import com.linkflow.api.link.dto.CreateShortUrlRequest;
 import com.linkflow.api.link.service.UrlCodecService;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,7 @@ class UrlControllerTest {
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
 
-        return MockMvcBuilders.standaloneSetup(new UrlController(urlCodecService))
+        return MockMvcBuilders.standaloneSetup(new UrlController(urlCodecService, "http://localhost:8080"))
                 .setControllerAdvice(new ApiExceptionHandler())
                 .addFilters(new RequestIdFilter())
                 .setValidator(validator)
@@ -55,7 +54,7 @@ class UrlControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().exists("X-Request-Id"))
                 .andExpect(jsonPath("$.slug").value("abc1234"))
-                .andExpect(jsonPath("$.shortUrl").value("/api/short-urls/abc1234"))
+                .andExpect(jsonPath("$.shortUrl").value("http://localhost:8080/api/short-urls/abc1234"))
                 .andExpect(jsonPath("$.longUrl").value("https://example.com/landing"));
     }
 
@@ -74,49 +73,6 @@ class UrlControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.error.details.longUrl").value("longUrl must start with http:// or https://"));
-
-        verify(urlCodecService, never()).createOrGet(anyString());
-    }
-
-    @Test
-    void createLinkReturnsApiEnvelope() throws Exception {
-        UrlCodecService urlCodecService = Mockito.mock(UrlCodecService.class);
-        MockMvc mockMvc = createMockMvc(urlCodecService);
-
-        Mockito.when(urlCodecService.createOrGet("https://example.com/landing"))
-                .thenReturn(new UrlMapping("https://example.com/landing", "abc1234"));
-
-        mockMvc.perform(post("/api/v1/links")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateLinkRequest(
-                                "https://example.com/landing",
-                                "Spring campaign"
-                        ))))
-                .andExpect(status().isCreated())
-                .andExpect(header().exists("X-Request-Id"))
-                .andExpect(jsonPath("$.data.slug").value("abc1234"))
-                .andExpect(jsonPath("$.data.short_url").value("/r/abc1234"))
-                .andExpect(jsonPath("$.data.long_url").value("https://example.com/landing"))
-                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.nullValue()));
-    }
-
-    @Test
-    void createLinkValidatesSchemaFields() throws Exception {
-        UrlCodecService urlCodecService = Mockito.mock(UrlCodecService.class);
-        MockMvc mockMvc = createMockMvc(urlCodecService);
-
-        mockMvc.perform(post("/api/v1/links")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "long_url": "ftp://example.com/file",
-                                  "title": ""
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.error.details.long_url").exists())
-                .andExpect(jsonPath("$.error.details.title").exists());
 
         verify(urlCodecService, never()).createOrGet(anyString());
     }

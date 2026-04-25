@@ -7,6 +7,8 @@ import com.linkflow.api.auth.dto.RefreshTokenRequest;
 import com.linkflow.api.auth.dto.RegisterRequest;
 import com.linkflow.api.auth.service.AuthService;
 import com.linkflow.api.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthUserResponse>> me(Principal principal) {
         AuthUserResponse user = authService.getCurrentUser(UUID.fromString(principal.getName()));
