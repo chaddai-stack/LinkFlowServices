@@ -3,7 +3,7 @@ spring:
     name: linkflow-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/appdb_linkflow
+    url: jdbc:postgresql://localhost:5432/appdb
     username: postgres
     password: devpass
     driver-class-name: org.postgresql.Driver
@@ -18,7 +18,24 @@ spring:
     locations: classpath:db/migration
 
 app:
-  public-base-url: http://localhost:8080
+  public-base-url: ${LINKFLOW_PUBLIC_BASE_URL:http://localhost:8080}
+  storage:
+    qrcode:
+      s3:
+        enabled: ${LINKFLOW_QR_S3_ENABLED:false}
+        bucket: ${LINKFLOW_QR_S3_BUCKET:linkflow-qrcodes}
+        region: ${LINKFLOW_QR_S3_REGION:us-west-1}
+        access-key: ${AWS_ACCESS_KEY_ID:}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:}
+        endpoint: ${LINKFLOW_QR_S3_ENDPOINT:}
+        public-base-url: ${LINKFLOW_QR_S3_PUBLIC_BASE_URL:}
+        prefix: ${LINKFLOW_QR_S3_PREFIX:qrcodes}
+  ai:
+    back-half:
+      enabled: ${LINKFLOW_BACK_HALF_LLM_ENABLED:false}
+      endpoint: ${LINKFLOW_BACK_HALF_LLM_ENDPOINT:https://api.openai.com/v1/chat/completions}
+      api-key: ${OPENAI_API_KEY:}
+      model: ${LINKFLOW_BACK_HALF_LLM_MODEL:gpt-4o-mini}
   security:
     jwt:
       issuer: linkflow-service

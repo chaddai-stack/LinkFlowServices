@@ -4,6 +4,11 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
+/**
+ * 业务 API 异常
+ *
+ * 服务层用它表达可预期业务错误，由全局异常处理器转换成统一 响应信封。
+ */
 public class ApiException extends RuntimeException {
 
     private final HttpStatus status;
@@ -18,6 +23,7 @@ public class ApiException extends RuntimeException {
         super(message);
         this.status = status;
         this.code = code;
+        // 保存不可变副本，防止调用方修改已抛出的异常上下文。
         this.details = details == null ? Map.of() : Map.copyOf(details);
     }
 

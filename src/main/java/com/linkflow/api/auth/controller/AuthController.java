@@ -31,30 +31,47 @@ public class AuthController {
         this.authService = authService;
     }
 
+    /**
+     * 注册用户
+     *
+     * 控制器 负责校验请求体和返回 201；邮箱、用户名冲突与密码加密在 服务层处理。
+     */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthUserResponse>> register(@Valid @RequestBody RegisterRequest request) {
         AuthUserResponse user = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
     }
 
+    /**
+     * 用户登录
+     */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse login = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success(login));
     }
 
+    /**
+     * 刷新会话
+     */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<LoginResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         LoginResponse login = authService.refresh(request);
         return ResponseEntity.ok(ApiResponse.success(login));
     }
 
+    /**
+     * 登出
+     */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    /**
+     * 获取当前用户
+     */
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthUserResponse>> me(Principal principal) {

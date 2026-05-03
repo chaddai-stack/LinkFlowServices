@@ -72,10 +72,16 @@ public class RefreshToken {
         return revokedAt;
     }
 
+    /**
+     * 判断 刷新令牌 是否仍可使用
+     */
     public boolean isActive(OffsetDateTime now) {
         return revokedAt == null && expiresAt.isAfter(now);
     }
 
+    /**
+     * 撤销 刷新令牌
+     */
     public void revoke(OffsetDateTime now) {
         if (revokedAt == null) {
             revokedAt = now;

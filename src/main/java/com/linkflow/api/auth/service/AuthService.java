@@ -38,6 +38,11 @@ public class AuthService {
         this.refreshTokenService = refreshTokenService;
     }
 
+    /**
+     * 注册用户
+     *
+     * 邮箱统一小写存储，用户名保留用户输入的大小写展示；密码只保存 BCrypt hash。
+     */
     @Transactional
     public AuthUserResponse register(RegisterRequest request) {
         String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
@@ -65,6 +70,11 @@ public class AuthService {
         return AuthUserResponse.from(userRepository.save(user));
     }
 
+    /**
+     * 登录并签发会话
+     *
+     * 登录成功后撤销用户当前未过期 刷新令牌，当前策略是减少长期有效 令牌 数量。
+     */
     @Transactional
     public LoginResponse login(LoginRequest request) {
         String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
@@ -89,17 +99,26 @@ public class AuthService {
         return issueSession(user);
     }
 
+    /**
+     * 刷新会话
+     */
     @Transactional
     public LoginResponse refresh(RefreshTokenRequest request) {
         RefreshTokenService.IssuedRefreshToken rotatedToken = refreshTokenService.rotate(request.refreshToken());
         return issueSession(rotatedToken.user(), rotatedToken);
     }
 
+    /**
+     * 登出
+     */
     @Transactional
     public void logout(RefreshTokenRequest request) {
         refreshTokenService.revoke(request.refreshToken());
     }
 
+    /**
+     * 根据 JWT 主题 查询当前用户
+     */
     @Transactional(readOnly = true)
     public AuthUserResponse getCurrentUser(UUID userId) {
         User user = userRepository.findById(userId)

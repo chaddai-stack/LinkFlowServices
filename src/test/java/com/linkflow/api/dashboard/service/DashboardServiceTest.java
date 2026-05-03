@@ -1,6 +1,7 @@
 package com.linkflow.api.dashboard.service;
 
 import com.linkflow.api.dashboard.dto.DashboardSummaryResponse;
+import com.linkflow.api.link.domain.LinkStatus;
 import com.linkflow.api.link.repository.UrlMappingRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,11 +18,12 @@ class DashboardServiceTest {
         DashboardService service = new DashboardService(repository);
 
         Mockito.when(repository.count()).thenReturn(12L);
+        Mockito.when(repository.countByStatus(LinkStatus.ACTIVE)).thenReturn(10L);
 
         DashboardSummaryResponse response = service.getSummary(null, null);
 
         assertEquals(12L, response.totalLinks());
-        assertEquals(12L, response.activeLinks());
+        assertEquals(10L, response.activeLinks());
         assertEquals(0L, response.totalClicks());
     }
 
@@ -33,10 +35,11 @@ class DashboardServiceTest {
         OffsetDateTime to = OffsetDateTime.parse("2026-03-31T23:59:59Z");
 
         Mockito.when(repository.countByCreatedAtBetween(from, to)).thenReturn(5L);
+        Mockito.when(repository.countByStatus(LinkStatus.ACTIVE)).thenReturn(4L);
 
         DashboardSummaryResponse response = service.getSummary(from, to);
 
         assertEquals(5L, response.totalLinks());
-        assertEquals(5L, response.activeLinks());
+        assertEquals(4L, response.activeLinks());
     }
 }

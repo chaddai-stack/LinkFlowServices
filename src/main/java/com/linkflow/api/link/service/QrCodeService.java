@@ -15,6 +15,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
+/**
+ * 二维码 PNG 生成服务
+ *
+ * 当前实现使用固定二维码版本和内置纠错编码，避免引入额外依赖。
+ */
 @Service
 public class QrCodeService {
 
@@ -27,6 +32,9 @@ public class QrCodeService {
     private static final int QUIET_ZONE = 4;
     private static final int MASK = 0;
 
+    /**
+     * 生成二维码 PNG。
+     */
     public byte[] generatePng(String value, int imageSize) {
         byte[] payload = value.getBytes(StandardCharsets.UTF_8);
         if (payload.length > 134) {
@@ -123,6 +131,7 @@ public class QrCodeService {
 
     private byte[] encodeDataCodewords(byte[] payload) {
         BitBuffer bits = new BitBuffer();
+        // 0100 表示字节模式；后续 8 位存储内容长度。
         bits.append(0b0100, 4);
         bits.append(payload.length, 8);
         for (byte b : payload) {
@@ -247,6 +256,7 @@ public class QrCodeService {
 
             int qrModules = SIZE + QUIET_ZONE * 2;
             double scale = (double) imageSize / qrModules;
+            // 用 floor/ceil 计算像素边界，避免缩放后模块之间出现白缝。
             for (int y = 0; y < SIZE; y++) {
                 for (int x = 0; x < SIZE; x++) {
                     if (!modules[y][x]) {

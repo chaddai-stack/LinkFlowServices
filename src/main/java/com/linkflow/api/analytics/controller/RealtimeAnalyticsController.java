@@ -1,8 +1,9 @@
 package com.linkflow.api.analytics.controller;
 
+import com.linkflow.api.analytics.dto.RealtimeOverviewResponse;
 import com.linkflow.api.analytics.service.RealtimeAnalyticsService;
 import com.linkflow.api.common.response.ApiResponse;
-import com.linkflow.api.link.dto.LinkSummaryResponse;
+import com.linkflow.api.link.dto.response.LinkSummaryResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -29,6 +30,24 @@ public class RealtimeAnalyticsController {
         this.realtimeAnalyticsService = realtimeAnalyticsService;
     }
 
+    /**
+     * 实时概览
+     */
+    @GetMapping("/overview")
+    public ResponseEntity<ApiResponse<RealtimeOverviewResponse>> overview(
+            @RequestParam(defaultValue = "15m") @Pattern(regexp = "^(5m|15m|1h|24h)$") String window
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                realtimeAnalyticsService.getOverview(window),
+                Map.of("window", window)
+        ));
+    }
+
+    /**
+     * 实时热门链接
+     *
+     * 当前用最近创建的链接作为可联调占位，后续可替换为点击窗口聚合结果。
+     */
     @GetMapping("/hot-links")
     public ResponseEntity<ApiResponse<List<LinkSummaryResponse>>> hotLinks(
             @RequestParam(defaultValue = "15m") @Pattern(regexp = "^(5m|15m|1h|24h)$") String window,

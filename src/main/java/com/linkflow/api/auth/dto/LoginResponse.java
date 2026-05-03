@@ -4,6 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.OffsetDateTime;
 
+/**
+ * 登录/刷新响应
+ *
+ * 同时返回短期 访问令牌 和长期 刷新令牌；前端按 expires_at 判断刷新时机。
+ */
 public record LoginResponse(
         @JsonProperty("access_token")
         String accessToken,
@@ -17,6 +22,9 @@ public record LoginResponse(
         OffsetDateTime refreshExpiresAt,
         AuthUserResponse user
 ) {
+    /**
+     * 构造 Bearer 令牌 响应
+     */
     public static LoginResponse bearer(
             String accessToken,
             OffsetDateTime expiresAt,

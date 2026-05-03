@@ -1,6 +1,6 @@
 package com.linkflow.api.link.repository;
 
-import com.linkflow.api.link.dto.LinkSummaryResponse;
+import com.linkflow.api.link.dto.response.LinkSummaryResponse;
 import com.linkflow.api.link.domain.UrlMapping;
 import com.linkflow.api.link.service.LinkQueryService;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class UrlMappingRepositoryTest {
         var result = repository.findAllByOrderByIdDesc(PageRequest.of(0, 10));
 
         assertEquals(2, result.getTotalElements());
-        assertEquals("second1", result.getContent().get(0).getSlug());
+        assertEquals("second1", result.getContent().get(0).getBackHalf());
     }
 
     @Test
@@ -45,14 +45,15 @@ class UrlMappingRepositoryTest {
                 "browser",
                 null
         ));
-        LinkQueryService service = new LinkQueryService(repository);
+        LinkQueryService service = new LinkQueryService(repository, "http://localhost:8080");
 
         var result = service.list(1, 20, null, null, "created_at,desc");
 
         assertEquals(1, result.getTotalElements());
         LinkSummaryResponse item = result.getContent().get(0);
-        assertEquals(LinkSummaryResponse.toPublicId(google.getId()), item.id());
-        assertEquals("google", item.slug());
+        assertEquals(google.getPublicId(), item.id());
+        assertEquals("google", item.backHalf());
+        assertEquals("google", item.backHalf());
         assertEquals("Google", item.title());
         assertEquals("browser", item.channel());
         assertEquals("active", item.status());
@@ -74,11 +75,11 @@ class UrlMappingRepositoryTest {
                 "email",
                 null
         ));
-        LinkQueryService service = new LinkQueryService(repository);
+        LinkQueryService service = new LinkQueryService(repository, "http://localhost:8080");
 
         var result = service.list(1, 20, "active", "goo", "created_at,desc");
 
         assertEquals(1, result.getTotalElements());
-        assertEquals("google", result.getContent().get(0).slug());
+        assertEquals("google", result.getContent().get(0).backHalf());
     }
 }

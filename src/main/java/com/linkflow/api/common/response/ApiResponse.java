@@ -4,6 +4,11 @@ import com.linkflow.api.common.web.RequestIdContext;
 
 import java.util.Map;
 
+/**
+ * 统一 JSON 响应信封
+ *
+ * 所有 JSON API 使用 data/error/meta/request_id 结构；图片、重定向等非 JSON 响应不使用该信封。
+ */
 public record ApiResponse<T>(
         String request_id,
         T data,

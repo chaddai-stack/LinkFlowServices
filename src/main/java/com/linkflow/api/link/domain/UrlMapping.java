@@ -7,25 +7,40 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "url_mapping")
 public class UrlMapping {
 
+    /*
+     * 内部主键
+     *
+     * 对数据库关系和外键友好，但不直接暴露给外部 API，避免自增 id 被枚举。
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /*
+     * 对外公开 ID
+     *
+     * 公开 ID 使用随机 UUID，与内部 内部 Long id 解耦；所有新版 Link API 都通过它寻址。
+     */
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+
     @Column(name = "long_url", nullable = false, columnDefinition = "TEXT")
     private String longUrl;
 
-    @Column(name = "slug", nullable = false, unique = true, length = 80)
-    private String slug;
+    @Column(name = "back_half", nullable = false, unique = true, length = 80)
+    private String backHalf;
 
     @Column(name = "title", length = 300)
     private String title;
@@ -51,13 +66,13 @@ public class UrlMapping {
     protected UrlMapping() {
     }
 
-    public UrlMapping(String longUrl, String slug) {
-        this.slug = slug;
+    public UrlMapping(String longUrl, String backHalf) {
+        this.backHalf = backHalf;
         this.longUrl = longUrl;
     }
 
-    public UrlMapping(String longUrl, String slug, String title, String channel, OffsetDateTime expiresAt) {
-        this.slug = slug;
+    public UrlMapping(String longUrl, String backHalf, String title, String channel, OffsetDateTime expiresAt) {
+        this.backHalf = backHalf;
         this.longUrl = longUrl;
         this.title = title;
         this.channel = channel;
@@ -69,12 +84,16 @@ public class UrlMapping {
         return id;
     }
 
+    public UUID getPublicId() {
+        return publicId;
+    }
+
     public String getLongUrl() {
         return longUrl;
     }
 
-    public String getSlug() {
-        return slug;
+    public String getBackHalf() {
+        return backHalf;
     }
 
     public String getTitle() {
@@ -101,9 +120,9 @@ public class UrlMapping {
         return updatedAt;
     }
 
-    public void updateDetails(String longUrl, String slug, String title, String channel, OffsetDateTime expiresAt) {
+    public void updateDetails(String longUrl, String backHalf, String title, String channel, OffsetDateTime expiresAt) {
         this.longUrl = longUrl;
-        this.slug = slug;
+        this.backHalf = backHalf;
         this.title = title;
         this.channel = channel;
         this.expiresAt = expiresAt;
@@ -111,5 +130,15 @@ public class UrlMapping {
 
     public void updateStatus(LinkStatus status) {
         this.status = status;
+    }
+
+    /**
+     * 持久化前分配 公开 UUID
+     */
+    @PrePersist
+    void assignPublicId() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
     }
 }

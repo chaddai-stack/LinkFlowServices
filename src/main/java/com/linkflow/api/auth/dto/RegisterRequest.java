@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/**
+ * 注册请求
+ */
 public record RegisterRequest(
         @NotBlank(message = "email is required")
         @Email(message = "email must be a valid email address")

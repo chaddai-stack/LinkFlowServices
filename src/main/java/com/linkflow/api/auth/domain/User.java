@@ -20,6 +20,9 @@ import java.util.UUID;
 @Table(name = "users")
 public class User {
 
+    /*
+     * 用户主键直接使用 UUID，适合对外作为 JWT 主题。
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -60,6 +63,9 @@ public class User {
         this.status = UserStatus.ACTIVE;
     }
 
+    /**
+     * 入库前规范化用户字段
+     */
     @PrePersist
     void normalize() {
         email = email == null ? null : email.trim().toLowerCase(Locale.ROOT);

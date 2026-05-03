@@ -4,6 +4,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * 登录请求
+ */
 public record LoginRequest(
         @NotBlank(message = "email is required")
         @Email(message = "email must be a valid email address")

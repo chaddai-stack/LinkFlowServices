@@ -31,6 +31,11 @@ public class JwtService {
         this.accessTokenTtl = accessTokenTtl;
     }
 
+    /**
+     * 签发 JWT 访问令牌
+     *
+     * JWT 主题 使用用户 UUID，额外 声明 保存前端常用的用户展示与权限信息。
+     */
     public JwtAccessToken issueAccessToken(User user) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plus(accessTokenTtl);

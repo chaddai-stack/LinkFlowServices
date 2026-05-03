@@ -32,6 +32,9 @@ public class RefreshTokenService {
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
+    /**
+     * 签发 刷新令牌
+     */
     @Transactional
     public IssuedRefreshToken issue(User user) {
         OffsetDateTime expiresAt = OffsetDateTime.now(ZoneOffset.UTC).plus(refreshTokenTtl);
@@ -42,6 +45,11 @@ public class RefreshTokenService {
         return new IssuedRefreshToken(refreshToken.getToken(), refreshToken.getExpiresAt(), refreshToken.getUser());
     }
 
+    /**
+     * 轮换 刷新令牌
+     *
+     * 旧 令牌 立即撤销，新 令牌 继承同一用户并重新计算过期时间，降低 刷新令牌 泄露后的复用风险。
+     */
     @Transactional
     public IssuedRefreshToken rotate(String rawToken) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(rawToken)
@@ -60,11 +68,17 @@ public class RefreshTokenService {
         return new IssuedRefreshToken(replacement.getToken(), replacement.getExpiresAt(), replacement.getUser());
     }
 
+    /**
+     * 撤销单个 刷新令牌
+     */
     @Transactional
     public void revoke(String rawToken) {
         refreshTokenRepository.findByToken(rawToken).ifPresent(token -> token.revoke(OffsetDateTime.now(ZoneOffset.UTC)));
     }
 
+    /**
+     * 撤销用户当前所有有效 刷新令牌
+     */
     @Transactional
     public void revokeActiveTokens(User user) {
         List<RefreshToken> tokens = refreshTokenRepository.findAllByUserIdAndRevokedAtIsNullAndExpiresAtAfter(

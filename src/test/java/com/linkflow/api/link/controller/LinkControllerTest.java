@@ -6,12 +6,15 @@ import com.linkflow.api.common.exception.ApiExceptionHandler;
 import com.linkflow.api.common.web.RequestIdFilter;
 import com.linkflow.api.link.domain.LinkStatus;
 import com.linkflow.api.link.domain.UrlMapping;
-import com.linkflow.api.link.dto.CreateLinkRequest;
-import com.linkflow.api.link.dto.LinkSummaryResponse;
-import com.linkflow.api.link.dto.UpdateLinkRequest;
-import com.linkflow.api.link.dto.UpdateLinkStatusRequest;
+import com.linkflow.api.link.dto.request.CreateLinkRequest;
+import com.linkflow.api.link.dto.response.LinkSummaryResponse;
+import com.linkflow.api.link.dto.request.UpdateLinkRequest;
+import com.linkflow.api.link.dto.request.UpdateLinkStatusRequest;
+import com.linkflow.api.link.service.BackHalfRecommendationService;
 import com.linkflow.api.link.service.LinkCommandService;
 import com.linkflow.api.link.service.LinkQueryService;
+import com.linkflow.api.link.service.LinkTitleCrawlerService;
+import com.linkflow.api.link.service.QrCodeAssetService;
 import com.linkflow.api.link.service.QrCodeService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -44,12 +47,21 @@ class LinkControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private MockMvc createMockMvc(LinkQueryService queryService) {
-        return createMockMvc(queryService, Mockito.mock(LinkCommandService.class), Mockito.mock(QrCodeService.class));
+        return createMockMvc(queryService, Mockito.mock(LinkCommandService.class), Mockito.mock(QrCodeAssetService.class));
     }
 
     private MockMvc createMockMvc(
             LinkQueryService queryService,
             LinkCommandService commandService,
+            QrCodeAssetService qrCodeAssetService
+    ) {
+        return createMockMvc(queryService, commandService, qrCodeAssetService, Mockito.mock(QrCodeService.class));
+    }
+
+    private MockMvc createMockMvc(
+            LinkQueryService queryService,
+            LinkCommandService commandService,
+            QrCodeAssetService qrCodeAssetService,
             QrCodeService qrCodeService
     ) {
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
@@ -58,6 +70,9 @@ class LinkControllerTest {
         return MockMvcBuilders.standaloneSetup(new LinkController(
                         queryService,
                         commandService,
+                        Mockito.mock(LinkTitleCrawlerService.class),
+                        Mockito.mock(BackHalfRecommendationService.class),
+                        qrCodeAssetService,
                         qrCodeService,
                         "http://localhost:8080"
                 ))
@@ -75,7 +90,7 @@ class LinkControllerTest {
     void createReturnsEnvelope() throws Exception {
         LinkQueryService queryService = Mockito.mock(LinkQueryService.class);
         LinkCommandService commandService = Mockito.mock(LinkCommandService.class);
-        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeService.class));
+        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeAssetService.class));
 
         UrlMapping mapping = mapping(7L, "promo2026", "https://example.com/campaign", "Spring campaign", "wechat", LinkStatus.ACTIVE);
         Mockito.when(commandService.create(Mockito.any(CreateLinkRequest.class))).thenReturn(mapping);
@@ -86,13 +101,14 @@ class LinkControllerTest {
                                 {
                                   "long_url": "https://example.com/campaign",
                                   "title": "Spring campaign",
-                                  "custom_slug": "promo2026",
+                                  "custom_back_half": "promo2026",
                                   "channel": "wechat"
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("X-Request-Id"))
-                .andExpect(jsonPath("$.data.slug").value("promo2026"))
+                .andExpect(jsonPath("$.data.back_half").value("promo2026"))
+                .andExpect(jsonPath("$.data.short_link").value("http://localhost:8080/promo2026"))
                 .andExpect(jsonPath("$.data.title").value("Spring campaign"))
                 .andExpect(jsonPath("$.data.channel").value("wechat"))
                 .andExpect(jsonPath("$.data.status").value("active"))
@@ -108,7 +124,7 @@ class LinkControllerTest {
                 List.of(new LinkSummaryResponse(
                         UUID.fromString("00000000-0000-0000-0000-000000000007"),
                         "promo2026",
-                        "/r/promo2026",
+                        "http://localhost:8080/promo2026",
                         "https://example.com/campaign",
                         null,
                         null,
@@ -125,7 +141,8 @@ class LinkControllerTest {
         mockMvc.perform(get("/api/v1/links"))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("X-Request-Id"))
-                .andExpect(jsonPath("$.data[0].slug").value("promo2026"))
+                .andExpect(jsonPath("$.data[0].back_half").value("promo2026"))
+                .andExpect(jsonPath("$.data[0].short_link").value("http://localhost:8080/promo2026"))
                 .andExpect(jsonPath("$.meta.page.page").value(1))
                 .andExpect(jsonPath("$.error").value(nullValue()));
     }
@@ -139,7 +156,7 @@ class LinkControllerTest {
         Mockito.when(service.getById(linkId)).thenReturn(new LinkSummaryResponse(
                 linkId,
                 "promo2026",
-                "/r/promo2026",
+                "http://localhost:8080/promo2026",
                 "https://example.com/campaign",
                 null,
                 null,
@@ -153,7 +170,9 @@ class LinkControllerTest {
         mockMvc.perform(get("/api/v1/links/{linkId}", linkId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(linkId.toString()))
-                .andExpect(jsonPath("$.data.short_url").value("/r/promo2026"));
+                .andExpect(jsonPath("$.data.link_id").value(linkId.toString()))
+                .andExpect(jsonPath("$.data.back_half").value("promo2026"))
+                .andExpect(jsonPath("$.data.short_link").value("http://localhost:8080/promo2026"));
     }
 
     @Test
@@ -176,7 +195,7 @@ class LinkControllerTest {
     void updateReturnsEnvelope() throws Exception {
         LinkQueryService queryService = Mockito.mock(LinkQueryService.class);
         LinkCommandService commandService = Mockito.mock(LinkCommandService.class);
-        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeService.class));
+        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeAssetService.class));
         UUID linkId = UUID.fromString("00000000-0000-0000-0000-000000000007");
         UrlMapping updated = mapping(7L, "new-slug", "https://example.com/new", "New title", "email", LinkStatus.ACTIVE);
 
@@ -189,12 +208,13 @@ class LinkControllerTest {
                                 {
                                   "long_url": "https://example.com/new",
                                   "title": "New title",
-                                  "custom_slug": "new-slug",
+                                  "custom_back_half": "new-slug",
                                   "channel": "email"
                                 }
-                                """))
+                """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.slug").value("new-slug"))
+                .andExpect(jsonPath("$.data.back_half").value("new-slug"))
+                .andExpect(jsonPath("$.data.short_link").value("http://localhost:8080/new-slug"))
                 .andExpect(jsonPath("$.data.title").value("New title"))
                 .andExpect(jsonPath("$.data.channel").value("email"));
     }
@@ -203,7 +223,7 @@ class LinkControllerTest {
     void updateStatusReturnsEnvelope() throws Exception {
         LinkQueryService queryService = Mockito.mock(LinkQueryService.class);
         LinkCommandService commandService = Mockito.mock(LinkCommandService.class);
-        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeService.class));
+        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeAssetService.class));
         UUID linkId = UUID.fromString("00000000-0000-0000-0000-000000000007");
         UrlMapping paused = mapping(7L, "promo2026", "https://example.com/campaign", "Spring campaign", "wechat", LinkStatus.PAUSED);
 
@@ -225,7 +245,7 @@ class LinkControllerTest {
     void deleteReturnsEnvelope() throws Exception {
         LinkQueryService queryService = Mockito.mock(LinkQueryService.class);
         LinkCommandService commandService = Mockito.mock(LinkCommandService.class);
-        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeService.class));
+        MockMvc mockMvc = createMockMvc(queryService, commandService, Mockito.mock(QrCodeAssetService.class));
         UUID linkId = UUID.fromString("00000000-0000-0000-0000-000000000007");
 
         mockMvc.perform(delete("/api/v1/links/{linkId}", linkId))
@@ -239,21 +259,24 @@ class LinkControllerTest {
     @Test
     void qrCodeReturnsPng() throws Exception {
         LinkQueryService queryService = Mockito.mock(LinkQueryService.class);
+        QrCodeAssetService qrCodeAssetService = Mockito.mock(QrCodeAssetService.class);
         QrCodeService qrCodeService = Mockito.mock(QrCodeService.class);
-        MockMvc mockMvc = createMockMvc(queryService, Mockito.mock(LinkCommandService.class), qrCodeService);
+        MockMvc mockMvc = createMockMvc(queryService, Mockito.mock(LinkCommandService.class), qrCodeAssetService, qrCodeService);
         UUID linkId = UUID.fromString("00000000-0000-0000-0000-000000000007");
         byte[] png = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47};
         UrlMapping mapping = mapping(7L, "promo2026", "https://example.com/campaign", "Spring campaign", "wechat", LinkStatus.ACTIVE);
 
         Mockito.when(queryService.getMappingById(linkId))
                 .thenReturn(mapping);
-        Mockito.when(qrCodeService.generatePng("http://localhost:8080/r/promo2026", 256)).thenReturn(png);
+        Mockito.when(qrCodeService.generatePng("http://localhost:8080/promo2026", 256))
+                .thenReturn(png);
 
         mockMvc.perform(get("/api/v1/links/{linkId}/qrcode", linkId)
                         .param("size", "256"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.IMAGE_PNG))
                 .andExpect(content().bytes(png));
+        Mockito.verifyNoInteractions(qrCodeAssetService);
     }
 
     @Test
@@ -267,10 +290,10 @@ class LinkControllerTest {
                 .andExpect(jsonPath("$.error.details.size").exists());
     }
 
-    private UrlMapping mapping(Long id, String slug, String longUrl, String title, String channel, LinkStatus status) {
+    private UrlMapping mapping(Long id, String backHalf, String longUrl, String title, String channel, LinkStatus status) {
         UrlMapping mapping = Mockito.mock(UrlMapping.class);
-        Mockito.when(mapping.getId()).thenReturn(id);
-        Mockito.when(mapping.getSlug()).thenReturn(slug);
+        Mockito.when(mapping.getPublicId()).thenReturn(new UUID(0x018f8f2e2db87a03L, id));
+        Mockito.when(mapping.getBackHalf()).thenReturn(backHalf);
         Mockito.when(mapping.getLongUrl()).thenReturn(longUrl);
         Mockito.when(mapping.getTitle()).thenReturn(title);
         Mockito.when(mapping.getChannel()).thenReturn(channel);

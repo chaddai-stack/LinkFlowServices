@@ -12,10 +12,16 @@ public enum LinkStatus {
     EXPIRED,
     BLOCKED;
 
+    /**
+     * 转成 API 使用的小写状态值
+     */
     public String wireValue() {
         return name().toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * 从 API 状态值解析 enum
+     */
     public static LinkStatus fromWireValue(String value) {
         if (value == null || value.isBlank()) {
             throw invalidStatus(value);
