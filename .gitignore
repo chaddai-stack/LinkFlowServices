@@ -29,7 +29,6 @@ out/
 ### Local secrets ###
 .env
 .env.*
-!.env.example
 
 ### NetBeans ###
 /nbproject/private/

@@ -42,10 +42,10 @@ public class BackHalfRecommendationService {
             UrlMappingRepository urlMappingRepository,
             LinkTitleCrawlerService linkTitleCrawlerService,
             ObjectMapper objectMapper,
-            @Value("${app.ai.back-half.enabled:${app.ai.slug.enabled:false}}") boolean llmEnabled,
-            @Value("${app.ai.back-half.endpoint:${app.ai.slug.endpoint:https://api.openai.com/v1/chat/completions}}") String llmEndpoint,
-            @Value("${app.ai.back-half.api-key:${app.ai.slug.api-key:${OPENAI_API_KEY:}}}") String llmApiKey,
-            @Value("${app.ai.back-half.model:${app.ai.slug.model:gpt-4o-mini}}") String llmModel
+            @Value("${app.ai.backhalf.enabled:false}") boolean llmEnabled,
+            @Value("${app.ai.backhalf.endpoint:https://api.openai.com/v1/chat/completions}") String llmEndpoint,
+            @Value("${app.ai.backhalf.api-key:${OPENAI_API_KEY:}}") String llmApiKey,
+            @Value("${app.ai.backhalf.model:gpt-4o-mini}") String llmModel
     ) {
         this.urlMappingRepository = urlMappingRepository;
         this.linkTitleCrawlerService = linkTitleCrawlerService;
@@ -60,7 +60,7 @@ public class BackHalfRecommendationService {
     }
 
     /**
-     * 基于本地规则和可选 LLM 推荐可读 back_half。
+     * 基于本地规则和可选 LLM 推荐可读 backhalf。
      */
     public BackHalfRecommendationResponse recommend(BackHalfRecommendationRequest request) {
         int limit = request.limit() == null ? DEFAULT_LIMIT : request.limit();

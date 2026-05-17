@@ -31,11 +31,16 @@ app:
         public-base-url: ${LINKFLOW_QR_S3_PUBLIC_BASE_URL:}
         prefix: ${LINKFLOW_QR_S3_PREFIX:qrcodes}
   ai:
-    back-half:
-      enabled: ${LINKFLOW_BACK_HALF_LLM_ENABLED:false}
-      endpoint: ${LINKFLOW_BACK_HALF_LLM_ENDPOINT:https://api.openai.com/v1/chat/completions}
+    backhalf:
+      enabled: ${LINKFLOW_BACKHALF_LLM_ENABLED:false}
+      endpoint: ${LINKFLOW_BACKHALF_LLM_ENDPOINT:https://api.openai.com/v1/chat/completions}
       api-key: ${OPENAI_API_KEY:}
-      model: ${LINKFLOW_BACK_HALF_LLM_MODEL:gpt-4o-mini}
+      model: ${LINKFLOW_BACKHALF_LLM_MODEL:gpt-4o-mini}
+    huggingface:
+      enabled: ${LINKFLOW_HF_ENABLED:false}
+      zero-shot-endpoint: ${LINKFLOW_HF_ZERO_SHOT_ENDPOINT:https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli}
+      api-key: ${HF_TOKEN:}
+      timeout-ms: ${LINKFLOW_HF_TIMEOUT_MS:3000}
   security:
     jwt:
       issuer: linkflow-service

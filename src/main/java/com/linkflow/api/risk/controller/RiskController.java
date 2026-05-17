@@ -50,14 +50,15 @@ public class RiskController {
             @RequestParam(required = false) @Pattern(regexp = "^(pending|approved|blocked|blacklisted)$") String status,
             @RequestParam(required = false) String search
     ) {
+        List<RiskAlertResponse> alerts = riskService.listAlerts(risk_level, status, search);
         return ResponseEntity.ok(ApiResponse.success(
-                riskService.listAlerts(risk_level, status, search),
+                alerts,
                 Map.of(
                         "page", Map.of(
                                 "page", page,
                                 "size", size,
-                                "total_elements", 0,
-                                "total_pages", 0,
+                                "total_elements", alerts.size(),
+                                "total_pages", alerts.isEmpty() ? 0 : 1,
                                 "has_next", false
                         )
                 )
